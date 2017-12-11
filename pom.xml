@@ -1,0 +1,60 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+
+	<parent>
+		<groupId>org.gs4tr</groupId>
+		<artifactId>gs4tr</artifactId>
+		<version>9</version>
+	</parent>
+
+	<groupId>rubygems</groupId>
+	<artifactId>glexchange</artifactId>
+	<version>4.11.1-SNAPSHOT</version>
+
+	<packaging>gem</packaging>
+
+	<name>GlobalLink Client Library</name>
+
+	<description>GLC gem integrates you with GlobalLink Project Director to create and manage translation projects</description>
+
+	<scm>
+		<connection>scm:svn:${development.server}/products/projectdirector-adaptors/projectdirector-adaptors-glcapi.ruby/trunk</connection>
+		<developerConnection>scm:svn:${development.server}/products/projectdirector-adaptors/projectdirector-adaptors-glcapi.ruby/trunk</developerConnection>
+	</scm>
+
+	<properties>
+		<project.build.sourceEncoding>utf-8</project.build.sourceEncoding>
+		<jruby.plugins.version>1.0.10</jruby.plugins.version>
+	</properties>
+
+	<dependencies>
+		<dependency>
+			<groupId>rubygems</groupId>
+			<artifactId>mumboe-soap4r</artifactId>
+			<version>[1.5,1.99999]</version>
+			<type>gem</type>
+		</dependency>
+	</dependencies>
+
+	<build>
+		<extensions>
+			<extension>
+				<groupId>de.saumya.mojo</groupId>
+				<artifactId>gem-extension</artifactId>
+				<version>${jruby.plugins.version}</version>
+			</extension>
+		</extensions>
+
+		<plugins>
+			<plugin>
+				<groupId>de.saumya.mojo</groupId>
+				<artifactId>gem-maven-plugin</artifactId>
+				<version>${jruby.plugins.version}</version>
+				<configuration>
+					<gemspec>glexchange.gemspec</gemspec>
+				</configuration>
+			</plugin>
+		</plugins>
+	</build>
+</project>
