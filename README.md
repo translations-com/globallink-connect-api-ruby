@@ -12,6 +12,11 @@ Request assistance to your Translations.com PDM.
 
 Have a bug or feedback? please feel free to [open a new issue](https://github.com/translations-com/globallink-connect-api-ruby/issues/new).
 
+## Ruby Gem repository
+
+Get the gem from RubyGems: [glexchange 4.18.0](https://rubygems.org/gems/glexchange/versions/4.18.0)
+
+Or ```gem install glexchange```
 
 
 
