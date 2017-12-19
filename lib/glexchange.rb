@@ -349,8 +349,8 @@ private
 		submissionInfo.metadata = metadatas
 		
 		if @submission.submitter != nil
-			submissionInfo.submitterFullNames = Array.new
-			submissionInfo.submitterFullNames << @submission.submitter 
+			submissionInfo.submitters = Array.new
+			submissionInfo.submitters << @submission.submitter
 		end
 
 		if @submission.owner != nil
