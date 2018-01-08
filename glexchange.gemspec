@@ -2,7 +2,7 @@ Gem::Specification.new do |s|
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
   s.rubygems_version = "2.4.5"
   s.name        = 'glexchange'
-  s.version     = '4.19.0'
+  s.version     = '4.18.1'
   s.date        = '2018-01-05'
   s.email = ["info@translations.com"]
   s.homepage = "http://translations.com"
