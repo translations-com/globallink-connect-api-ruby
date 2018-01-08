@@ -7,7 +7,7 @@ require 'glexchange'
 require 'glexchange/model/ProjectDirectorConfig'
 require 'glexchange/model/Submission'
 require 'glexchange/model/Document'
-require './utils/Config'
+require '.\\utils\\Config'
 
 config_file = 'config.properties'
 $source_folder = './resources/'
@@ -120,7 +120,7 @@ def initSubmission(project)
 		submission.project = project
 		submission.isUrgent = true
 		submission.pmNotes = "some pm notes"
-		submission.dueDate = Date.new(2017,9,1).to_time.to_i
+		submission.dueDate = Date.new(2018,9,1).to_time.to_i
 		return submission
 end
 
