@@ -20,7 +20,7 @@ module Glexchange
 				@clientIdentifier = externalTarget.document.documentInfo.clientIdentifier
 				
 				if externalTarget.tmStatistics != nil then
-					@wordCount = Glexchange::Model::PDWordCount.new(externalTarget.tmStatistics.goldWordCount, externalTarget.tmStatistics.oneHundredMatchWordCount, externalTarget.tmStatistics.repetitionWordCount, externalTarget.tmStatistics.noMatchWordCount, externalTarget.tmStatistics.totalWordCount )
+					@wordCount = Glexchange::Model::PDWordCount.new(externalTarget.tmStatistics.inContextMatchWordCount, externalTarget.tmStatistics.oneHundredMatchWordCount, externalTarget.tmStatistics.repetitionWordCount, externalTarget.tmStatistics.noMatchWordCount, externalTarget.tmStatistics.totalWordCount )
 				end
 				
 				@metadata = Hash.new

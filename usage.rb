@@ -7,7 +7,7 @@ require 'glexchange'
 require 'glexchange/model/ProjectDirectorConfig'
 require 'glexchange/model/Submission'
 require 'glexchange/model/Document'
-require '.\\utils\\Config'
+require './utils/Config'
 
 config_file = 'config.properties'
 $source_folder = './resources/'
@@ -15,7 +15,12 @@ $translated_folder = 'translated/'
 $config = Config.new(config_file)
 p $config
 def doSend
-	glxchange = initGLExchange
+	begin
+		glxchange = initGLExchange
+	rescue Exception
+		puts "Cannot connect" + $!.to_s
+		return
+	end
 
 	pdproject = glxchange.getProject($config.project)
 	puts "Using project #{pdproject.name}"
@@ -120,7 +125,8 @@ def initSubmission(project)
 		submission.project = project
 		submission.isUrgent = true
 		submission.pmNotes = "some pm notes"
-		submission.dueDate = Date.new(2018,9,1).to_time.to_i
+		#submission.customAttributes = {"combomandatory" => "\"Option 3\"", "freetextmandatory" => "value3"}
+		submission.dueDate = Date.new(2019,9,1).to_time.to_i
 		return submission
 end
 

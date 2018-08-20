@@ -1,4 +1,4 @@
-require 'glexchange/pdws/DocumentService_4180'
+require 'glexchange/pdws/SubmissionService_4180'
 module Glexchange
 	module Model
 		class PDReferenceDocument

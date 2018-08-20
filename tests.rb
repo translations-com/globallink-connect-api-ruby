@@ -275,7 +275,7 @@ def initSubmission(project)
 	submission.submitter = $config.username
 	submission.isUrgent = false
 	submission.pmNotes = "some pm notes"
-	submission.dueDate = Date.new(2018,9,1).to_time.to_i
+	submission.dueDate = Date.new(2017,9,1).to_time.to_i
 	return submission
 end
 	

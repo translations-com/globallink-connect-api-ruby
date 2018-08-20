@@ -92,6 +92,20 @@ class GLExchange
 		return result
 
 	end
+
+	def getCancelledTargetsBySubmissions(submissionTickets, maxResults)
+		getCancelledTargetsBySubmissionRequest = Glexchange::Pdws::GetCanceledTargetsBySubmissions.new
+		getCancelledTargetsBySubmissionRequest.maxResults = maxResults
+		getCancelledTargetsBySubmissionRequest.submissionTickets = submissionTickets 
+		
+		cancelledTargets = @targetService.getCanceledTargetsBySubmissions ( getCancelledTargetsBySubmissionRequest )
+		result = Array.new
+		for externalTarget in cancelledTargets
+			result << Glexchange::Model::PDTarget.new(externalTarget)
+		end
+		return result
+
+	end
 	
 	def getCompletedTargets (maxResults)
 		projects = getProjects
@@ -211,6 +225,28 @@ class GLExchange
 			raise "Invalid submission ticket"
 		end
 	end
+
+	def getSubmissionStatus (submissionTicket)
+		findSubmissionByTicketRequest = Glexchange::Pdws::FindByTicket.new (submissionTicket)
+		
+		response = @submissionService.findByTicket ( findSubmissionByTicketRequest )
+		if response != nil
+			return response.m_return.status
+		else
+			raise "Invalid submission ticket"
+		end
+	end
+
+	def getSubmissionId (submissionTicket)
+		findSubmissionByTicketRequest = Glexchange::Pdws::FindByTicket.new (submissionTicket)
+		
+		response = @submissionService.findByTicket ( findSubmissionByTicketRequest )
+		if response != nil
+			return response.m_return.submissionId
+		else
+			raise "Invalid submission ticket"
+		end
+	end
 	
 	def getSubmissionTicket
 		if @submission != nil && @submission.ticket != nil
@@ -275,6 +311,11 @@ class GLExchange
 		@submissionService.startSubmission ( startSubmissionRequest )
 		
 		submissionTicket = @submission.ticket
+
+		if @submission.owner != nil
+			addOwnerRequest = Glexchange::Pdws::AddOwner.new(submissionTicket, @submission.owner)
+			@submissionService.addOwner ( addOwnerRequest )
+		end
 		@submission = nil
 		
 		return submissionTicket
@@ -296,7 +337,7 @@ class GLExchange
 		end
 		
 		uploadReferenceRequest = Glexchange::Pdws::UploadReference.new
-		uploadReferenceRequest.data = Base64.encode64(referenceDocument.data)
+		uploadReferenceRequest.data = Base64.strict_encode64(referenceDocument.data)
 		uploadReferenceRequest.submissionId = @submission.ticket
 		uploadReferenceRequest.resourceInfo = referenceDocument.getResourceInfo
 		
@@ -313,8 +354,8 @@ class GLExchange
 		documentInfo = document.getDocumentInfo ( @submission )
 		resourceInfo = document.getResourceInfo
 		
-		submitDocumentWithBinaryTextRequest = Glexchange::Pdws::SubmitDocumentWithTextResource.new(documentInfo, resourceInfo, document.data)
-		response = @documentService.submitDocumentWithTextResource ( submitDocumentWithBinaryTextRequest )
+		submitDocumentWithBinaryTextRequest = Glexchange::Pdws::SubmitDocumentWithBinaryResource.new(documentInfo, resourceInfo, Base64.strict_encode64(document.data))
+		response = @documentService.submitDocumentWithBinaryResource ( submitDocumentWithBinaryTextRequest )
 		documentTicket = response.m_return
 
 		if documentTicket != nil
@@ -350,11 +391,7 @@ private
 		
 		if @submission.submitter != nil
 			submissionInfo.submitters = Array.new
-			submissionInfo.submitters << @submission.submitter
-		end
-
-		if @submission.owner != nil
-			submissionInfo.owner << @submission.owner 
+			submissionInfo.submitters << @submission.submitter 
 		end
 		
 		priority = Glexchange::Pdws::Priority.new
@@ -472,13 +509,13 @@ private
 			end
 		end
 		
-		if submission.project.customAttributes != nil
+		if submission.project.customAttributes != nil && submission.project.customAttributes.length > 0
 			for projectCustomAttribute in submission.project.customAttributes
 				if projectCustomAttribute.mandatory
 					isSet = false
 					if submission.customAttributes !=nil
-						for submissionCustomAttribute in submission.customAttributes
-							if submissionCustomAttribute.name == projectCustomAttribute.name
+						for key in submission.customAttributes.keys
+							if key == projectCustomAttribute.name
 								isSet = true
 								break
 							end
@@ -489,13 +526,43 @@ private
 					end
 				end
 			end
+			if submission.customAttributes !=nil && submission.customAttributes.length > 0
+				for key in submission.customAttributes.keys
+					isExists = false
+					for projectCustomAttribute in submission.project.customAttributes
+						if key == projectCustomAttribute.name
+							isExists = true
+							if projectCustomAttribute.type=="COMBO" && projectCustomAttribute.values != nil
+								comboValueCorrect = false
+								va = projectCustomAttribute.values.split(',')
+								for option in va
+									if option == submission.customAttributes[key]
+										comboValueCorrect = true
+										break
+									end
+								end
+								if comboValueCorrect == false
+									raise "Value '#{submission.customAttributes[key]}' for custom field '#{key}' is not allowed. Allowed values:#{projectCustomAttribute.values}"
+								end
+							end
+						end
+					end
+					if isExists == false
+						raise "Custom field '#{key}' is not allowed in project"
+					end
+				end
+			end
+		else
+			if submission.customAttributes !=nil && submission.customAttributes.length > 0
+				raise "Project doesn't have custom attributes"
+	    	end
 		end
 	end
 	
 	def addHeaders (obj)
 		obj.headerhandler << Glexchange::Header::WsseAuthHeader.new(@connectionConfig.username, @connectionConfig.password)
 		obj.headerhandler << Glexchange::Header::WsseUserAgentHeader.new(@connectionConfig.userAgent)
-		#obj.options["soap.envelope.no_indent"] = true
+		obj.options["soap.envelope.no_indent"] = true
 		return obj
 	end
 	
@@ -517,18 +584,55 @@ private
 			@connectionConfig.url = @connectionConfig.url.chomp.chop
 		end
 		
-		@documentService = addHeaders(Glexchange::Pdws::DocumentServicePortType.new(@connectionConfig.url + "/services/DocumentService"))
-		@projectService = addHeaders(Glexchange::Pdws::ProjectServicePortType.new(@connectionConfig.url + "/services/ProjectService"))
-		@submissionService = addHeaders(Glexchange::Pdws::SubmissionServicePortType.new(@connectionConfig.url + "/services/SubmissionService"))
-		@targetService = addHeaders(Glexchange::Pdws::TargetServicePortType.new(@connectionConfig.url + "/services/TargetService"))
-		@userProfileService = addHeaders(Glexchange::Pdws::UserProfileServicePortType.new(@connectionConfig.url + "/services/UserProfileService"))
-		@workflowService = addHeaders(Glexchange::Pdws::WorkflowServicePortType.new(@connectionConfig.url + "/services/WorkflowService"))
+		@documentService = addHeaders(Glexchange::Pdws::DocumentServicePortType.new(@connectionConfig.url + "/services/DocumentService_4180"))
+		@projectService = addHeaders(Glexchange::Pdws::ProjectServicePortType.new(@connectionConfig.url + "/services/ProjectService_4180"))
+		@submissionService = addHeaders(Glexchange::Pdws::SubmissionServicePortType.new(@connectionConfig.url + "/services/SubmissionService_4180"))
+		@targetService = addHeaders(Glexchange::Pdws::TargetServicePortType.new(@connectionConfig.url + "/services/TargetService_4180"))
+		@userProfileService = addHeaders(Glexchange::Pdws::UserProfileServicePortType.new(@connectionConfig.url + "/services/UserProfileService_4180"))
+		@workflowService = addHeaders(Glexchange::Pdws::WorkflowServicePortType.new(@connectionConfig.url + "/services/WorkflowService_4180"))
 
 		begin
-			@projectService.getUserProjects(Glexchange::Pdws::GetUserProjects.new(true))
+			projects = @projectService.getUserProjects(Glexchange::Pdws::GetUserProjects.new(true))
+			if projects!=nil and projects.length==1 and projects[0]==nil
+				raise "Projects is nil"
+			end
 		rescue Exception
-			raise "Invalid config. " + $!.to_s
+			throw "Invalid config. " + $!.to_s
 		end
 		
+	end
+end
+
+module SOAP
+
+	class Generator
+		def encode_tag(elename, attrs = nil)
+		    if attrs.nil? or attrs.empty?
+		    	@buf << "#{ @indent }<#{ elename }>"
+		    	return 
+		    end
+		    ary = []
+		    attrs.each do |key, value|
+		    	ary << %Q[#{ key }="#{ get_encoded(value.to_s) }"]
+		    end
+		    case ary.size
+		    	when 0
+		      		@buf << "#{ @indent }<#{ elename }>"
+		    	when 1
+		      		@buf << %Q[#{ @indent }<#{ elename } #{ ary[0] }>]
+		    	else
+		      		@buf << "#{ @indent }<#{ elename } " <<
+		        	ary.join(" #{ @indent }#{ @indentstr * 2 }") <<
+					'>'
+		    end
+		end
+
+	  	def encode_tag_end(elename, cr = nil)
+	  		if cr
+		      @buf << "#{ @indent }</#{ elename }>"
+		    else
+		      @buf << "</#{ elename }>"
+		    end
+	  	end
 	end
 end
